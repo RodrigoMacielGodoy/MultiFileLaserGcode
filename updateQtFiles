@@ -1,1 +1,4 @@
 pyuic5 UI/main_window.ui -o src/main_window_layout.py
+pyuic5 UI/file_item_config.ui -o src/file_config_widget_layout.py
+
+pyrcc5 Resources/icons.qrc -o src/icons_rc.py

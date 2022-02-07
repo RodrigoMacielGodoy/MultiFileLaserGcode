@@ -1,0 +1,23 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>../Media/Icons/arrow-down-outline.svg</file>
+    <file>../Media/Icons/arrow-ios-downward-outline.svg</file>
+    <file>../Media/Icons/arrow-ios-forward-outline.svg</file>
+    <file>../Media/Icons/arrow-up-outline.svg</file>
+    <file>../Media/Icons/chevron-down-outline.svg</file>
+    <file>../Media/Icons/chevron-right-outline.svg</file>
+    <file>../Media/Icons/close-circle-outline.svg</file>
+    <file>../Media/Icons/close-outline.svg</file>
+    <file>../Media/Icons/download-outline.svg</file>
+    <file>../Media/Icons/eye-off-outline.svg</file>
+    <file>../Media/Icons/eye-outline.svg</file>
+    <file>../Media/Icons/file-add-outline.svg</file>
+    <file>../Media/Icons/folder-add-outline.svg</file>
+    <file>../Media/Icons/home-outline.svg</file>
+    <file>../Media/Icons/info-outline.svg</file>
+    <file>../Media/Icons/refresh-outline.svg</file>
+    <file>../Media/Icons/sync-outline.svg</file>
+    <file>../Media/Icons/trash-2-outline.svg</file>
+    <file>../Media/Icons/trash-outline.svg</file>
+  </qresource>
+</RCC>
