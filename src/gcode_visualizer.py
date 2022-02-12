@@ -1,8 +1,8 @@
 import re
 
-from PyQt5.QtGui import QColor, QFont, QPainter, QPen, QWheelEvent
-from PyQt5.QtWidgets import QGraphicsView, QWidget
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QColor, QPainter, QPen, QWheelEvent
+from PyQt5.QtWidgets import QLabel, QWidget, QGraphicsOpacityEffect
+from PyQt5.QtCore import Qt, QPoint, QPropertyAnimation, QPointF
 
 from list_data_model import ListDataModel
 import config
@@ -20,6 +20,23 @@ class GcodeVisualizer(QWidget):
         self.__scale = 1.0
         self.__gcodes = {}
 
+        self.__gcode_scale = 254/72.0
+        self.__near_range = 10
+        self.__draw_points = []
+        self.__circ_radius = 3
+
+        self.__lb_pos = QLabel(self)
+        self.__lb_lock_pos = QPoint(0,0)
+        self.__lb_pos.setStyleSheet("QLabel{color:white;background:black;}")
+        self.__lb_offset = QPoint(20,20)
+        self.__lb_effect = QGraphicsOpacityEffect()
+        self.__lb_pos.setGraphicsEffect(self.__lb_effect)
+        self.__lb_fade_anim = QPropertyAnimation(self.__lb_effect, b"opacity")
+        self.__lb_fade_anim.setDuration(800)
+        self.__lb_fade_anim.setStartValue(1.0)
+        self.__lb_fade_anim.setEndValue(0.2)
+        self.__lb_fade_anim.finished.connect(self.__lb_pos.hide)
+
         self.pen_thickness = {"G0": 1, "G1": 3}
         self.pen_line_style = {"G0": Qt.DashLine, "G1": Qt.SolidLine}
         self.setMouseTracking(True)
@@ -35,6 +52,7 @@ class GcodeVisualizer(QWidget):
         self.__model.dataChanged.connect(self.update)
 
     def paintEvent(self, event):
+        self.__draw_points.clear()
         painter = QPainter(self)
         painter.setPen(QPen(Qt.black, 2, Qt.SolidLine))
         painter.drawRect(0, 0, self.width(), self.height())
@@ -65,17 +83,19 @@ class GcodeVisualizer(QWidget):
             for i,point in enumerate(points):
                 if i > 0:
                     last_pt = points[i-1]
-                start_pt = QPoint( int(10*last_pt["point"][0]), self.height() - int(10*last_pt["point"][1]))
-                end_pt = QPoint( int(10*point["point"][0]), self.height() - int(10*point["point"][1]) )
-                
+                start_pt = QPoint( int(self.__gcode_scale*last_pt["point"][0]),
+                                 self.height() - int(self.__gcode_scale*last_pt["point"][1]))
+                end_pt = QPoint( int(self.__gcode_scale*point["point"][0]),
+                                 self.height() - int(self.__gcode_scale*point["point"][1]) )
+                self.__draw_points.append(end_pt)
                 painter.setPen(QPen(self.power_color(power*file.passes,
                                                      (0, config.LASER_POWER/config.MIN_FEED_RATE),
                                                      reverse=True),
                                     self.pen_thickness[point["cmd"]],
                                     self.pen_line_style[point["cmd"]]))
                 painter.drawLine(start_pt, end_pt)
+                painter.drawEllipse(QPointF(end_pt), self.__circ_radius, self.__circ_radius)
             last_pt = points[-1]
-
 
     def parse_gcode(self, gcode) -> tuple:
         power = re.findall("M4\s*S(\d+)", gcode)
@@ -143,10 +163,36 @@ class GcodeVisualizer(QWidget):
         self.__first_pos = None
         self.__last_offset = self.__offset
 
+    def enterEvent(self, a0) -> None:
+        # self.__lb_pos.show()
+        self.__lb_effect.setOpacity(1.0)
+        self.__lb_fade_anim.stop()
+        return super().enterEvent(a0)
+
+    def leaveEvent(self, a0) -> None:
+        self.__lb_fade_anim.start()
+        return super().leaveEvent(a0)
+
     def mouseMoveEvent(self, event):
+        #TODO: Arrumar qnd muda o xoom
+        local_pos = (event.localPos()-self.__offset)/self.__scale
+        if not self.__lb_pos.isHidden():
+            for pt in self.__draw_points:
+                diff = pt-local_pos
+                dist = diff.manhattanLength()
+                if dist <= self.__near_range:
+                    pos = pt/10.0
+                    n_pos = (pt+self.__offset)/self.__scale
+                    self.__lb_pos.setText(f"X {pos.x():0.2f}; Y {pos.y():0.2f}")
+                    self.__lb_pos.adjustSize()
+                    self.__lb_pos.move(QPoint(int(n_pos.x()), int(n_pos.y())))
+                    self.__lb_lock_pos = pt
         if event.buttons() == Qt.LeftButton:
             if not self.__first_pos:
                 self.__first_pos = event.localPos()
                 return
             self.__offset = self.__last_offset - self.__first_pos + event.localPos()
+            if not self.__lb_pos.isHidden():
+                n_pos = self.__lb_lock_pos + self.__offset
+                self.__lb_pos.move((n_pos).toPoint())
             self.update()

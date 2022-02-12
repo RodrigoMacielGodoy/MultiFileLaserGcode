@@ -1,17 +1,18 @@
-from PyQt5.QtWidgets import QMainWindow
+import os
+from PyQt5.QtWidgets import QMainWindow, QFileDialog
 from main_window_layout import Ui_MainWindow as WindowLayout
 
 from file_config_widget import FileConfigWidget
 from list_data_model import ListDataModel
 
-# TODO: create beahaviors for the open File, Folder buttons,
+# TODO: create beahaviors for the open File, open Folder,
 # Delete All and Show/Hide all buttons.
 # TODO: Add save project
 # TODO: Add configurations Window
 # TODO: Add materials settings (sqlite (?))
 # TODO: Add start and end Gcodes for each File
 
-class Window(QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.ui = WindowLayout()
@@ -28,6 +29,7 @@ class Window(QMainWindow):
         self.ui.dropableListWidget.newFilesDropped.connect(self.newFilesDropped)
         self.ui.bt_reset_view.clicked.connect(self.resetGcodeView)
         self.ui.bt_generate_gcode.clicked.connect(self.filesDataModel.generateGcodes)
+        self.ui.bt_save_gcode.clicked.connect(self.save_gcode)
 
     def newFilesDropped(self, files: list) -> None:
         for file in files:
@@ -44,3 +46,10 @@ class Window(QMainWindow):
     
     def resetGcodeView(self) -> None:
         self.ui.graphicsView.resetView()
+
+    def save_gcode(self) -> None:
+        path = QFileDialog.getSaveFileName(self, "", os.path.expanduser("~"))
+        if path:
+            with open(path[0], "w") as f:
+                for file in self.filesDataModel.items:
+                    f.write(file.gcode+"\n")

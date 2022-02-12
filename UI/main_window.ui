@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>885</width>
-    <height>637</height>
+    <width>794</width>
+    <height>563</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -237,7 +237,7 @@
              <x>0</x>
              <y>0</y>
              <width>368</width>
-             <height>461</height>
+             <height>387</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -317,12 +317,50 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>885</width>
+     <width>794</width>
      <height>22</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionOpen_Project"/>
+    <addaction name="actionSave_Project"/>
+    <addaction name="actionSave_Project_as"/>
+    <addaction name="separator"/>
+    <addaction name="actionExport_Gcode"/>
+    <addaction name="separator"/>
+    <addaction name="actionProperties"/>
+   </widget>
+   <addaction name="menuFile"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionSave_Project">
+   <property name="text">
+    <string>Save Project</string>
+   </property>
+  </action>
+  <action name="actionOpen_Project">
+   <property name="text">
+    <string>Open Project</string>
+   </property>
+  </action>
+  <action name="actionExport_Gcode">
+   <property name="text">
+    <string>Export Gcode</string>
+   </property>
+  </action>
+  <action name="actionSave_Project_as">
+   <property name="text">
+    <string>Save Project as ...</string>
+   </property>
+  </action>
+  <action name="actionProperties">
+   <property name="text">
+    <string>Properties</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>

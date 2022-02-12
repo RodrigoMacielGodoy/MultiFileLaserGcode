@@ -1,9 +1,7 @@
-import os
-from window import Window
-from file_config_widget import FileConfigWidget
+from window import MainWindow
 
 class WindowManager(object):
     def __init__(self) -> None:
-        self.window = Window()
-        self.window.show()
+        self.main_window = MainWindow()
+        self.main_window.show()
 

@@ -1,6 +1,5 @@
 from importlib.resources import path
 import os
-from turtle import update
 
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget
