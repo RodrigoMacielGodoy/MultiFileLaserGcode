@@ -14,14 +14,14 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(330, 165)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
+        Form.resize(330, 204)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(Form.sizePolicy().hasHeightForWidth())
         Form.setSizePolicy(sizePolicy)
-        Form.setMinimumSize(QtCore.QSize(330, 165))
-        Form.setMaximumSize(QtCore.QSize(330, 165))
+        Form.setMinimumSize(QtCore.QSize(330, 0))
+        Form.setMaximumSize(QtCore.QSize(330, 500))
         Form.setStyleSheet("QWidget{\n"
 "    background-color: rgb(57, 57, 57);\n"
 "}\n"
@@ -29,14 +29,15 @@ class Ui_Form(object):
 "    background-color:rgb(57, 57, 57);\n"
 "    border-radius: 5px;\n"
 "    border: 1px solid rgb(33, 33, 33);\n"
-"    margin-top: 1.5ex; /* leave space at the top for the title */\n"
+"    margin-top: 2ex; /* leave space at the top for the title */\n"
 "}\n"
 "\n"
 "QGroupBox::title {\n"
-"    background-color: transparent;\n"
+"    background-color: rgba(57, 57, 57, 0);\n"
+"    margin: -5px;\n"
 "    subcontrol-origin: margin;\n"
 "    subcontrol-position: top  left; \n"
-"    padding: 0 -8px;\n"
+"    padding: 0 6px;\n"
 "    color: white;\n"
 "}\n"
 "\n"
@@ -91,7 +92,7 @@ class Ui_Form(object):
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setObjectName("verticalLayout")
         self.groupBox = QtWidgets.QGroupBox(Form)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.groupBox.sizePolicy().hasHeightForWidth())
@@ -164,6 +165,11 @@ class Ui_Form(object):
         self.horizontalLayout_3.setStretch(6, 1)
         self.verticalLayout_3.addLayout(self.horizontalLayout_3)
         self.config_frame = QtWidgets.QFrame(self.groupBox)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.config_frame.sizePolicy().hasHeightForWidth())
+        self.config_frame.setSizePolicy(sizePolicy)
         self.config_frame.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.config_frame.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.config_frame.setFrameShadow(QtWidgets.QFrame.Plain)
@@ -179,7 +185,7 @@ class Ui_Form(object):
         self.label.setObjectName("label")
         self.horizontalLayout.addWidget(self.label)
         self.le_feed_rate = QtWidgets.QLineEdit(self.config_frame)
-        self.le_feed_rate.setMinimumSize(QtCore.QSize(100, 0))
+        self.le_feed_rate.setMinimumSize(QtCore.QSize(100, 20))
         self.le_feed_rate.setAlignment(QtCore.Qt.AlignCenter)
         self.le_feed_rate.setObjectName("le_feed_rate")
         self.horizontalLayout.addWidget(self.le_feed_rate)
@@ -204,6 +210,7 @@ class Ui_Form(object):
         self.hs_power.setObjectName("hs_power")
         self.horizontalLayout_2.addWidget(self.hs_power)
         self.le_power = QtWidgets.QLineEdit(self.config_frame)
+        self.le_power.setMinimumSize(QtCore.QSize(0, 20))
         self.le_power.setMaximumSize(QtCore.QSize(60, 16777215))
         self.le_power.setAlignment(QtCore.Qt.AlignCenter)
         self.le_power.setObjectName("le_power")
@@ -217,12 +224,19 @@ class Ui_Form(object):
         self.label_3.setObjectName("label_3")
         self.horizontalLayout_4.addWidget(self.label_3)
         self.le_passes = QtWidgets.QLineEdit(self.config_frame)
-        self.le_passes.setMinimumSize(QtCore.QSize(100, 0))
+        self.le_passes.setMinimumSize(QtCore.QSize(100, 20))
         self.le_passes.setAlignment(QtCore.Qt.AlignCenter)
         self.le_passes.setObjectName("le_passes")
         self.horizontalLayout_4.addWidget(self.le_passes)
         self.verticalLayout_2.addLayout(self.horizontalLayout_4)
+        self.lb_power_coef = QtWidgets.QLabel(self.config_frame)
+        self.lb_power_coef.setMinimumSize(QtCore.QSize(0, 20))
+        self.lb_power_coef.setMaximumSize(QtCore.QSize(16777215, 20))
+        self.lb_power_coef.setAlignment(QtCore.Qt.AlignCenter)
+        self.lb_power_coef.setObjectName("lb_power_coef")
+        self.verticalLayout_2.addWidget(self.lb_power_coef)
         self.bt_reload_gcode = QtWidgets.QPushButton(self.config_frame)
+        self.bt_reload_gcode.setMinimumSize(QtCore.QSize(0, 30))
         self.bt_reload_gcode.setMaximumSize(QtCore.QSize(16777215, 32))
         self.bt_reload_gcode.setIcon(icon)
         self.bt_reload_gcode.setIconSize(QtCore.QSize(20, 20))
@@ -241,5 +255,6 @@ class Ui_Form(object):
         self.label.setText(_translate("Form", "Feed Rate:"))
         self.label_2.setText(_translate("Form", "Power:"))
         self.label_3.setText(_translate("Form", "Passes:"))
+        self.lb_power_coef.setText(_translate("Form", "Power Coef.: --"))
         self.bt_reload_gcode.setText(_translate("Form", "Reload Gcode"))
 import icons_rc

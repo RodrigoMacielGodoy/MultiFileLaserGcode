@@ -25,12 +25,14 @@ class FileConfigWidget(QWidget):
         self.feed_rate = 600
         self.laser_power = 0.5
         self.passes = 1
+        self.power_coef = 0
         self.gcode = ""
         self.curves = []
         self.showing_gcode = True
         self.__valid_file = None
         self.setupUI()
         self.setupConnects()
+        self.power_coef_changed()
 
     def setupUI(self) -> None:
         self.ui.setupUi(self)
@@ -55,6 +57,7 @@ class FileConfigWidget(QWidget):
         self.ui.hs_power.valueChanged.connect(self.laser_power_changed)
         self.ui.le_passes.textChanged.connect(self.passes_changed)
         self.ui.bt_reload_gcode.clicked.connect(self.generate_gcode)
+        self.ui.bt_top_generate_gcode.clicked.connect(self.ui.bt_reload_gcode.clicked.emit)
 
         self.ui.bt_hide_show_gcode.clicked.connect(self.hide_show_gcode)
 
@@ -76,7 +79,7 @@ class FileConfigWidget(QWidget):
         if checked:
             self.ui.bt_top_generate_gcode.hide()
             self.ui.config_frame.show()
-            self.setFixedHeight(165)
+            self.setMaximumHeight(500)
         else:
             self.ui.bt_delete_file.setEnabled(True)
             self.ui.bt_move_down.setEnabled(True)
@@ -85,7 +88,7 @@ class FileConfigWidget(QWidget):
             self.ui.bt_top_generate_gcode.show()
             self.ui.bt_top_generate_gcode.setEnabled(True)
             self.ui.config_frame.hide()
-            self.setFixedHeight(60)
+            self.setMaximumHeight(60)
 
     def hide_show_gcode(self) -> None:
         self.showing_gcode = not self.showing_gcode
@@ -95,6 +98,9 @@ class FileConfigWidget(QWidget):
     def feed_rate_changed(self, val: str) -> None:
         if val != "":
             self.feed_rate = int(val)
+            if self.feed_rate <= 0:
+                self.feed_rate = 1
+            self.power_coef_changed()
     
     def laser_power_changed(self, val: "str | int") -> None:
         updt_le = False
@@ -115,10 +121,16 @@ class FileConfigWidget(QWidget):
             self.ui.le_power.blockSignals(False)
 
         self.laser_power = val
+        self.power_coef_changed()
 
     def passes_changed(self, val: str) -> None:
         if val != "":
             self.passes = int(val)
+            self.power_coef_changed()
+
+    def power_coef_changed(self) -> None:
+        self.power_coef = (self.laser_power/self.feed_rate)*self.passes*100
+        self.ui.lb_power_coef.setText(f"Power Coef.: {self.power_coef:0.2f}")
 
     def generate_gcode(self) -> None:
         compiler = Compiler(LaserInterface,

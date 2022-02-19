@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>330</width>
-    <height>165</height>
+    <height>204</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+   <sizepolicy hsizetype="Fixed" vsizetype="MinimumExpanding">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -19,13 +19,13 @@
   <property name="minimumSize">
    <size>
     <width>330</width>
-    <height>165</height>
+    <height>0</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>330</width>
-    <height>165</height>
+    <height>500</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -39,14 +39,15 @@ QGroupBox {
     background-color:rgb(57, 57, 57);
     border-radius: 5px;
     border: 1px solid rgb(33, 33, 33);
-    margin-top: 1.5ex; /* leave space at the top for the title */
+    margin-top: 2ex; /* leave space at the top for the title */
 }
 
 QGroupBox::title {
-	background-color: transparent;
+	background-color: rgba(57, 57, 57, 0);
+	margin: -5px;
     subcontrol-origin: margin;
     subcontrol-position: top  left; 
-    padding: 0 -8px;
+    padding: 0 6px;
 	color: white;
 }
 
@@ -114,7 +115,7 @@ QLineEdit {
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -300,6 +301,12 @@ QLineEdit {
       </item>
       <item>
        <widget class="QFrame" name="config_frame">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="maximumSize">
          <size>
           <width>16777215</width>
@@ -348,7 +355,7 @@ QLineEdit {
              <property name="minimumSize">
               <size>
                <width>100</width>
-               <height>0</height>
+               <height>20</height>
               </size>
              </property>
              <property name="alignment">
@@ -412,6 +419,12 @@ QLineEdit {
            </item>
            <item>
             <widget class="QLineEdit" name="le_power">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>20</height>
+              </size>
+             </property>
              <property name="maximumSize">
               <size>
                <width>60</width>
@@ -451,7 +464,7 @@ QLineEdit {
              <property name="minimumSize">
               <size>
                <width>100</width>
-               <height>0</height>
+               <height>20</height>
               </size>
              </property>
              <property name="alignment">
@@ -462,7 +475,35 @@ QLineEdit {
           </layout>
          </item>
          <item>
+          <widget class="QLabel" name="lb_power_coef">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>20</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Power Coef.: --</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="bt_reload_gcode">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>30</height>
+            </size>
+           </property>
            <property name="maximumSize">
             <size>
              <width>16777215</width>

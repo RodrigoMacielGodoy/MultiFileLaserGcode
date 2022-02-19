@@ -20,7 +20,7 @@ class GcodeVisualizer(QWidget):
         self.__scale = 1.0
         self.__gcodes = {}
 
-        self.__gcode_scale = 254/72.0
+        self.__gcode_scale = 10
         self.__near_range = 10
         self.__draw_points = []
         self.__circ_radius = 3
@@ -60,7 +60,7 @@ class GcodeVisualizer(QWidget):
         painter.translate(self.__offset)
         painter.scale(self.__scale, self.__scale)
 
-        painter.setPen(QPen(Qt.red, 2, Qt.SolidLine))
+        painter.setPen(QPen(Qt.red, 1, Qt.SolidLine))
         painter.drawLine(0, self.height(),
                         self.width(), self.height())
 
@@ -76,6 +76,8 @@ class GcodeVisualizer(QWidget):
                 continue
             try:
                 points, power = self.parse_gcode(gcode)
+                if points is None and power is None:
+                    continue
             except Exception as ex:
                 print(ex)
                 continue
@@ -83,10 +85,10 @@ class GcodeVisualizer(QWidget):
             for i,point in enumerate(points):
                 if i > 0:
                     last_pt = points[i-1]
-                start_pt = QPoint( int(self.__gcode_scale*last_pt["point"][0]),
-                                 self.height() - int(self.__gcode_scale*last_pt["point"][1]))
-                end_pt = QPoint( int(self.__gcode_scale*point["point"][0]),
-                                 self.height() - int(self.__gcode_scale*point["point"][1]) )
+                start_pt = QPointF(self.__gcode_scale*last_pt["point"][0],
+                                 self.height() - self.__gcode_scale*last_pt["point"][1])
+                end_pt = QPointF(self.__gcode_scale*point["point"][0],
+                                self.height() - self.__gcode_scale*point["point"][1])
                 self.__draw_points.append(end_pt)
                 painter.setPen(QPen(self.power_color(power*file.passes,
                                                      (0, config.LASER_POWER/config.MIN_FEED_RATE),
@@ -98,6 +100,8 @@ class GcodeVisualizer(QWidget):
             last_pt = points[-1]
 
     def parse_gcode(self, gcode) -> tuple:
+        if gcode == "":
+            return None, None
         power = re.findall("M4\s*S(\d+)", gcode)
         points = []
         speeds = []
@@ -144,19 +148,29 @@ class GcodeVisualizer(QWidget):
     def wheelEvent(self, event: QWheelEvent) -> None:
         val = event.angleDelta().y()//120
         factor = 0.2
-        self.__scale += val*factor
-        if self.__scale <= 0.2:
-            self.__scale = 0.2
+        n_scale = self.__scale + (val*factor)
+        pos = event.position()
+        n_offset = self.__offset + (val*(self.__offset - pos)*factor)
+        
+
+        if n_scale <= 0.2:
+            n_scale = 0.2
             self.update()
             return
-        if self.__scale >= 1.8:
-            self.__scale = 1.8
+        if n_scale >= 1.8:
+            n_scale = 1.8
             self.update()
             return
 
-        pos = event.position()
+        if not self.__lb_pos.isHidden():
+            # n_pos = (self.__lb_lock_pos*n_scale)+n_offset
+            # self.__lb_pos.move(n_pos.toPoint())
+            self.__lb_pos.hide()
+
+        
         self.__last_offset = self.__offset
-        self.__offset += val*(self.__offset - pos)*factor
+        self.__offset = n_offset
+        self.__scale = n_scale
         self.update()
 
     def mouseReleaseEvent(self, evt) -> None:
@@ -164,7 +178,7 @@ class GcodeVisualizer(QWidget):
         self.__last_offset = self.__offset
 
     def enterEvent(self, a0) -> None:
-        # self.__lb_pos.show()
+        self.__lb_pos.show()
         self.__lb_effect.setOpacity(1.0)
         self.__lb_fade_anim.stop()
         return super().enterEvent(a0)
@@ -174,25 +188,29 @@ class GcodeVisualizer(QWidget):
         return super().leaveEvent(a0)
 
     def mouseMoveEvent(self, event):
-        #TODO: Arrumar qnd muda o xoom
-        local_pos = (event.localPos()-self.__offset)/self.__scale
-        if not self.__lb_pos.isHidden():
-            for pt in self.__draw_points:
-                diff = pt-local_pos
-                dist = diff.manhattanLength()
-                if dist <= self.__near_range:
-                    pos = pt/10.0
-                    n_pos = (pt+self.__offset)/self.__scale
-                    self.__lb_pos.setText(f"X {pos.x():0.2f}; Y {pos.y():0.2f}")
-                    self.__lb_pos.adjustSize()
-                    self.__lb_pos.move(QPoint(int(n_pos.x()), int(n_pos.y())))
-                    self.__lb_lock_pos = pt
+        for pt in self.__draw_points:
+            local_pt = (pt*self.__scale)+self.__offset
+            diff = local_pt-event.pos()
+            dist = diff.manhattanLength()
+            if dist <= self.__near_range:
+                d_pt = QPointF(
+                    pt.x()/self.__gcode_scale,
+                    (self.height()-pt.y())/self.__gcode_scale
+                )
+                self.__lb_pos.setText(f"X {d_pt.x():0.3f}; "
+                                        f"Y {d_pt.y():0.3f}")
+                self.__lb_pos.adjustSize()
+                self.__lb_pos.show()
+                self.__lb_pos.move(QPoint(int(local_pt.x()), int(local_pt.y())))
+                self.__lb_lock_pos = local_pt
+
         if event.buttons() == Qt.LeftButton:
             if not self.__first_pos:
                 self.__first_pos = event.localPos()
                 return
             self.__offset = self.__last_offset - self.__first_pos + event.localPos()
             if not self.__lb_pos.isHidden():
-                n_pos = self.__lb_lock_pos + self.__offset
-                self.__lb_pos.move((n_pos).toPoint())
+                self.__lb_pos.hide()
+                # n_pos = (self.__lb_lock_pos*self.__scale) + self.__offset
+                # self.__lb_pos.move((n_pos).toPoint())
             self.update()
