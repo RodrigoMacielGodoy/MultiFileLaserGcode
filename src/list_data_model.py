@@ -10,7 +10,7 @@ class ListDataModel(QObject):
         self.__paths = []
 
     @property
-    def items(self) -> list:
+    def items(self) -> "list[FileConfigWidget]":
         return self.__data
 
     def __emit_change(self) -> None:
@@ -25,6 +25,24 @@ class ListDataModel(QObject):
         item.dataChanged.connect(self.__emit_change)
         self.__data.insert(0, item)
         self.dataChanged.emit(self.__data)
+
+    def clearItems(self) -> None:
+        len_ = len(self.__data)
+        for i in range(len_):
+            item = self.__data[0]
+            path = item.path
+            if item in self.__data:
+                if item.path in self.__paths:
+                    self.__paths.remove(item.path)
+                self.__data.remove(item)
+                item.setParent(None)
+                del(item)
+        self.dataChanged.emit(self.__data)
+
+    def removeItemAt(self, index: int) -> None:
+        if index < 0 or index >= len(self.__data):
+            return
+        self.removeItem(self.__data[index])
 
     def removeItem(self, item) -> None:
         path = item.path
