@@ -1,11 +1,13 @@
 import re
+import traceback
 
+from PyQt5.QtCore import QPoint, QPointF, QPropertyAnimation, Qt
 from PyQt5.QtGui import QColor, QPainter, QPen, QWheelEvent
-from PyQt5.QtWidgets import QLabel, QWidget, QGraphicsOpacityEffect
-from PyQt5.QtCore import Qt, QPoint, QPropertyAnimation, QPointF
+from PyQt5.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
-from list_data_model import ListDataModel
 import config
+from list_data_model import ListDataModel
+
 
 def average(iterable):
     return sum(iterable)/len(iterable)
@@ -24,6 +26,12 @@ class GcodeVisualizer(QWidget):
         self.__near_range = 10
         self.__draw_points = []
         self.__circ_radius = 3
+        self.pen_thickness = {"G0": 1, "G1": 3}
+        self.pen_line_style = {"G0": Qt.DashLine, "G1": Qt.SolidLine}
+
+        self.redraw = True
+        self.__cache = {}
+        self.__drew = []
 
         self.__lb_pos = QLabel(self)
         self.__lb_lock_pos = QPoint(0,0)
@@ -36,9 +44,7 @@ class GcodeVisualizer(QWidget):
         self.__lb_fade_anim.setStartValue(1.0)
         self.__lb_fade_anim.setEndValue(0.2)
         self.__lb_fade_anim.finished.connect(self.__lb_pos.hide)
-
-        self.pen_thickness = {"G0": 1, "G1": 3}
-        self.pen_line_style = {"G0": Qt.DashLine, "G1": Qt.SolidLine}
+        
         self.setMouseTracking(True)
 
     def resetView(self) -> None:
@@ -49,7 +55,14 @@ class GcodeVisualizer(QWidget):
 
     def setModel(self, model: ListDataModel) -> None:
         self.__model = model
-        self.__model.dataChanged.connect(self.update)
+        self.__model.dataChanged.connect(self.data_changed)
+
+    def data_changed(self, data: list) -> None:
+        self.redraw = True
+        self.update()
+
+    def qpoint_to_tuple(self, qpoint: "QPoint | QPointF") -> tuple:
+        return (qpoint.x(), qpoint.y())
 
     def paintEvent(self, event):
         self.__draw_points.clear()
@@ -60,44 +73,64 @@ class GcodeVisualizer(QWidget):
         painter.translate(self.__offset)
         painter.scale(self.__scale, self.__scale)
 
+
         painter.setPen(QPen(Qt.red, 1, Qt.SolidLine))
         painter.drawLine(0, self.height(),
                         self.width(), self.height())
 
-        painter.drawLine(0,0,
-                        0, self.height())
-        last_pt = {"point":(0,0)}
-        speed = None
-        for file in self.__model.items:
-            if not file.showing_gcode:
-                continue
-            gcode = file.gcode
-            if not gcode:
-                continue
-            try:
-                points, power = self.parse_gcode(gcode)
-                if points is None and power is None:
+        if self.redraw:
+            self.redraw = False
+            painter.drawLine(0,0,
+                            0, self.height())
+            last_pt = {"point":(0,0)}
+            self.__cache["lines"] = []
+            self.__cache["pens"] = []
+            for file in self.__model.items:
+                if not file.showing_gcode:
                     continue
-            except Exception as ex:
-                print(ex)
-                continue
-            
-            for i,point in enumerate(points):
-                if i > 0:
-                    last_pt = points[i-1]
-                start_pt = QPointF(self.__gcode_scale*last_pt["point"][0],
-                                 self.height() - self.__gcode_scale*last_pt["point"][1])
-                end_pt = QPointF(self.__gcode_scale*point["point"][0],
-                                self.height() - self.__gcode_scale*point["point"][1])
-                self.__draw_points.append(end_pt)
-                painter.setPen(QPen(self.power_color(power*file.passes,
-                                                     (0, config.LASER_POWER/config.MIN_FEED_RATE),
-                                                     reverse=True),
-                                    self.pen_thickness[point["cmd"]],
-                                    self.pen_line_style[point["cmd"]]))
-                painter.drawLine(start_pt, end_pt)
-                painter.drawEllipse(QPointF(end_pt), self.__circ_radius, self.__circ_radius)
-            last_pt = points[-1]
+                gcode = file.gcode
+                if not gcode:
+                    continue
+                try:
+                    points, power = self.parse_gcode(gcode)
+                    if points is None and power is None:
+                        continue
+                except Exception as ex:
+                    print(traceback.print_exc())
+                    continue
+                
+                for i,point in enumerate(points):
+                    if i > 0:
+                        last_pt = points[i-1]
+                    start_pt = QPointF(self.__gcode_scale*last_pt["point"][0],
+                                    self.height() - self.__gcode_scale*last_pt["point"][1])
+                    end_pt = QPointF(self.__gcode_scale*point["point"][0],
+                                    self.height() - self.__gcode_scale*point["point"][1])
+
+                    pen = QPen(self.power_color(power*file.passes,
+                                (0, config.LASER_POWER/config.MIN_FEED_RATE),
+                                reverse=True),
+                                self.pen_thickness[point["cmd"]],
+                                self.pen_line_style[point["cmd"]])
+
+                    self.__draw_points.append(end_pt)
+                    self.__cache["lines"].append((start_pt, end_pt))
+                    self.__cache["pens"].append(pen)
+                    painter.setPen(pen)
+                    painter.drawLine(start_pt, end_pt)
+                    painter.drawEllipse(QPointF(end_pt), self.__circ_radius, self.__circ_radius)
+                last_pt = points[-1]
+        else:
+            k = 0
+            self.__drew[:] = []
+            for i,line in enumerate(self.__cache["lines"]):
+                line_tuple = [self.qpoint_to_tuple(line[i]) for i in range(len(line))]
+                if line_tuple in self.__drew:
+                    break
+                self.__drew.append(line_tuple)
+                painter.setPen(self.__cache["pens"][i])
+                painter.drawLine(line[0], line[1])
+                painter.drawEllipse(line[1], self.__circ_radius, self.__circ_radius)
 
     def parse_gcode(self, gcode) -> tuple:
         if gcode == "":
@@ -105,19 +138,26 @@ class GcodeVisualizer(QWidget):
         power = re.findall("M4\s*S(\d+)", gcode)
         points = []
         speeds = []
+        cmds = []
         if len(power) > 0:
             power = int(power[0])
         for line in gcode.split("\n"):
             cmd = re.findall("(G[0,1])", line)
             if len(cmd) == 0:
                 continue
-            pt_data = {
-                "cmd": cmd[0]
-            }
 
             point = re.findall("X(-*\d+\.*\d*)\s*Y(-*\d+\.*\d*)", line)[0]
-            pt_data["point"] = (float(point[0]), float(point[1]))
+            cmd_line = " ".join(cmd+list(point))
 
+            if cmd_line in cmds:
+                break
+
+            cmds.append(cmd_line)
+
+            pt_data = {
+                "cmd": cmd[0],
+                "point":(float(point[0]), float(point[1]))
+            }
             speed = re.findall("F(\d+)", line)
             if len(speed) > 0:
                 speeds.append(int(speed[0]))
@@ -150,8 +190,6 @@ class GcodeVisualizer(QWidget):
         factor = 0.2
         n_scale = self.__scale + (val*factor)
         pos = event.position()
-        n_offset = self.__offset + (val*(self.__offset - pos)*factor)
-        
 
         if n_scale <= 0.2:
             n_scale = 0.2
@@ -162,11 +200,10 @@ class GcodeVisualizer(QWidget):
             self.update()
             return
 
-        if not self.__lb_pos.isHidden():
-            # n_pos = (self.__lb_lock_pos*n_scale)+n_offset
-            # self.__lb_pos.move(n_pos.toPoint())
-            self.__lb_pos.hide()
+        n_offset = self.__offset + (val*factor*(self.__offset - pos))
 
+        if not self.__lb_pos.isHidden():
+            self.__lb_pos.hide()
         
         self.__last_offset = self.__offset
         self.__offset = n_offset
